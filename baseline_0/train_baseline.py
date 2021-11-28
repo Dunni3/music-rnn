@@ -99,7 +99,9 @@ class PianoRollLSTM(nn.Module):
 if __name__ == "__main__":
 
     # set filepaths
-    _datadir = Path('../data/classical')
+    print('i am running!', flush=True)
+    _reporoot = Path('/net/dali/home/mscbio/icd3/music-rnn/')
+    _datadir = _reporoot / 'data' / 'classical'
     _metadata_file = _datadir / 'metadata.csv'
     output_dir = Path('./')
     if not output_dir.exists():
@@ -107,6 +109,11 @@ if __name__ == "__main__":
     metrics_file = output_dir / 'metrics.csv'
 
     df_meta = pd.read_csv(_metadata_file)
+    def process_path(row, _datadir=_datadir):
+        fp = Path(row['file'])
+        new_fp = _datadir / fp.name
+        return str(new_fp)
+    df_meta['file'] = df_meta.apply(process_path, axis=1)
 
     batch_per_file = 625
     seq_length = 100
@@ -152,6 +159,7 @@ if __name__ == "__main__":
 
     while iter_idx < 1000:
         iter_idx += 1
+        print(f'iter_idx = {iter_idx}', flush=True)
         
         try:
             features, labels = next(train_iterator)

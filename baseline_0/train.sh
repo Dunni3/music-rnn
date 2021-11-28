@@ -9,8 +9,8 @@
 #SBATCH --mem=64gb
 #SBATCH --time=672:00:00
 #SBATCH --qos=normal
-#SBATCH -o %J.stdout
-#SBATCH -e %J.stderr
+#SBATCH -o job.stdout
+#SBATCH -e job.stderr
 #SBATCH --dependency=singleton
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=ian.dunn@pitt.edu

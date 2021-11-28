@@ -58,6 +58,10 @@ class PianoRoll(Dataset):
         
         seq = roll[:-1]
         label = roll[-1]
+
+        if seq.shape[0] != 100:
+            print(file_idx, window_idx)
+
         return seq, label
 
 class PianoRollLSTM(nn.Module):
@@ -100,8 +104,8 @@ if __name__ == "__main__":
 
     # set filepaths
     print('i am running!', flush=True)
-    #_reporoot = Path('/home/ian/projects/music-rnn')
-    _reporoot = Path('/net/dali/home/mscbio/icd3/music-rnn')
+    _reporoot = Path('/home/ian/projects/music-rnn')
+    # _reporoot = Path('/net/dali/home/mscbio/icd3/music-rnn')
     _datadir = _reporoot / 'data' / 'classical'
     _metadata_file = _datadir / 'metadata.csv'
     output_dir = Path('./')

@@ -4,4 +4,4 @@ training loss goes to 0 immediately and test loss increases rapidly.
 i'm going to try setting shuffle=true for the training dataloader for this iteration
 
 found bug: returning entire file for each slice..
-fixed bug and running with shuffle=false for training dataloader
+

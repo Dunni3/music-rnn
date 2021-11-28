@@ -12,22 +12,55 @@ from torch import nn
 class PianoRoll(Dataset):
     
     def __init__(self, df_meta: pd.DataFrame, seq_length: int = 25, 
-                 batch_size: int = 20, batch_per_file: int = 1):
-        self.df_meta = df_meta
+                 batch_size: int = 20, batch_per_file=None):
+        self.df_meta = df_meta.copy()
+
+        self.df_meta['n_batches'] = self.df_meta['roll_length']*0.9 // batch_size
+        self.df_meta['n_batches'] = self.df_meta['n_batches'].astype(int)
+        file_idx_ends = []
+        n_batches = self.df_meta['n_batches'].values
+        file_idx_ends = [n_batches[0]*batch_size - 1]
+        for batches_in_file in n_batches[1:]:
+            file_idx_ends.append(batches_in_file*batch_size + file_idx_ends[-1] )
+
+        self.df_meta['file_idx_ends'] = file_idx_ends
+
         
         self.seq_length = seq_length
         self.batch_size = batch_size
         self.batch_per_file = batch_per_file
-        self.idx_per_file = self.batch_size*self.batch_per_file
+
+        if self.batch_per_file is not None:
+            self.idx_per_file = self.batch_size*self.batch_per_file
+        else:
+            self.idx_per_file = None
         
         self.roll_cache = {}
         
     def __len__(self):
-        return self.df_meta.shape[0]*self.idx_per_file
+        if self.batch_per_file is None:
+            return int(self.df_meta['n_batches'].sum()*self.batch_size)
+        else:
+            return self.df_meta.shape[0]*self.idx_per_file
     
     def __getitem__(self, idx):
-        file_idx = idx // self.idx_per_file
-        window_idx = idx % self.idx_per_file
+        if self.batch_per_file is None:
+            file_idx_ends = self.df_meta['file_idx_ends'].values
+            for i in range(len(file_idx_ends)):
+                if idx < file_idx_ends[i]:
+                    file_idx = i
+                    break
+            if file_idx == 0:
+                idx_start = 0
+            else:
+                idx_start = file_idx_ends[file_idx - 1]
+            window_idx = int(idx - idx_start)
+        else:
+            file_idx = idx // self.idx_per_file
+            window_idx = idx % self.idx_per_file
+
+        if idx == 17280:
+            print(f'idx_start = {idx_start}')
         
         
         seq, label = self.get_rolls(file_idx, window_idx)
@@ -49,16 +82,19 @@ class PianoRoll(Dataset):
         if file_idx in self.roll_cache:
             roll = self.roll_cache[file_idx]
         else:
-            note_dist = df_meta.iloc[file_idx]['16th_note_duration']
+            note_dist = self.df_meta.iloc[file_idx]['16th_note_duration']
             roll = self.midi_to_pianoroll(file_path, sample_dist=note_dist)
             self.roll_cache[file_idx] = roll
             
         roll[roll != 0] = 1
         roll = roll.T
-        roll = roll[window_idx:window_idx+self.seq_length+1, :]
+        roll_window = roll[window_idx:window_idx+self.seq_length+1, :]
+
+        if roll_window.shape[0] != self.seq_length:
+            print(file_idx, window_idx)
         
-        seq = roll[:-1]
-        label = roll[-1]
+        seq = roll_window[:-1]
+        label = roll_window[-1]
         return seq, label
 
 class PianoRollLSTM(nn.Module):
@@ -98,11 +134,11 @@ class PianoRollLSTM(nn.Module):
             return left_output, right_output
 
 if __name__ == "__main__":
-
+    torch.manual_seed(0)
     # set filepaths
     print('i am running!', flush=True)
-    #_reporoot = Path('/home/ian/projects/music-rnn')
-    _reporoot = Path('/net/dali/home/mscbio/icd3/music-rnn')
+    _reporoot = Path('/home/ian/projects/music-rnn')
+    # _reporoot = Path('/net/dali/home/mscbio/icd3/music-rnn')
     _datadir = _reporoot / 'data' / 'classical'
     _metadata_file = _datadir / 'metadata.csv'
     output_dir = Path('./')
@@ -118,7 +154,6 @@ if __name__ == "__main__":
         return str(new_fp)
     df_meta['file'] = df_meta.apply(process_path, axis=1)
 
-    batch_per_file = 625
     seq_length = 100
     learning_rate = 1e-3
     batch_size = 8
@@ -134,8 +169,8 @@ if __name__ == "__main__":
     df_test = df_chpn.iloc[test_idx]
 
     dset_train = PianoRoll(df_meta=df_train, 
-                        batch_size=batch_size, 
-                        batch_per_file=batch_per_file,
+                        batch_size=batch_size,
+                        batch_per_file=None,
                         seq_length=seq_length)
 
 
@@ -145,7 +180,7 @@ if __name__ == "__main__":
                         seq_length=seq_length)
 
 
-    train_dataloader = DataLoader(dset_train, batch_size=batch_size, shuffle=False, num_workers=0)
+    train_dataloader = DataLoader(dset_train, batch_size=batch_size, shuffle=True, num_workers=0)
     test_dataloader = DataLoader(dset_test, batch_size=batch_size, shuffle=False, num_workers=0)
 
     model = PianoRollLSTM(separate=False)
@@ -220,6 +255,9 @@ if __name__ == "__main__":
             # save metrics
             df_metrics = pd.DataFrame({ key: np.asarray(val) for key, val in metrics.items() })
             df_metrics.to_csv(metrics_file)
+
+            for key, val in metrics.items():
+                print(f'iter_idx={iter_idx}, {key}={val[-1]}')
 
             # save model
             torch.save(model.state_dict(), f'model_weights_iter{iter_idx}.pth')

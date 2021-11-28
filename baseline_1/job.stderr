@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/net/dali/home/mscbio/icd3/music-rnn/baseline_1/./train_baseline.py", line 168, in <module>
+    features, labels = next(train_iterator)
+  File "/net/dali/home/mscbio/icd3/.conda/envs/mg/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 517, in __next__
+    data = self._next_data()
+  File "/net/dali/home/mscbio/icd3/.conda/envs/mg/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 557, in _next_data
+    data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+  File "/net/dali/home/mscbio/icd3/.conda/envs/mg/lib/python3.9/site-packages/torch/utils/data/_utils/fetch.py", line 47, in fetch
+    return self.collate_fn(data)
+  File "/net/dali/home/mscbio/icd3/.conda/envs/mg/lib/python3.9/site-packages/torch/utils/data/_utils/collate.py", line 83, in default_collate
+    return [default_collate(samples) for samples in transposed]
+  File "/net/dali/home/mscbio/icd3/.conda/envs/mg/lib/python3.9/site-packages/torch/utils/data/_utils/collate.py", line 83, in <listcomp>
+    return [default_collate(samples) for samples in transposed]
+  File "/net/dali/home/mscbio/icd3/.conda/envs/mg/lib/python3.9/site-packages/torch/utils/data/_utils/collate.py", line 55, in default_collate
+    return torch.stack(batch, 0, out=out)
+RuntimeError: stack expects each tensor to be equal size, but got [100, 128] at entry 0 and [99, 128] at entry 3

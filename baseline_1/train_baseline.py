@@ -55,6 +55,7 @@ class PianoRoll(Dataset):
             
         roll[roll != 0] = 1
         roll = roll.T
+        roll = roll[window_idx:window_idx+self.seq_length+1, :]
         
         seq = roll[:-1]
         label = roll[-1]

@@ -49,7 +49,8 @@ http://localhost:$ipnport?token=$token
 ## start an ipcluster instance and launch jupyter server
 
 module load cuda/10.2
-source /net/dali/home/mscbio/icd3/cvae-test/bin/activate 
+module load anaconda
+conda activate mg
 
 jupyter lab --NotebookApp.iopub_data_rate_limit=100000000000000 \
                  --port=$ipnport --ip=$ipnip \

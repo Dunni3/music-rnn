@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     # set filepaths
     print('i am running!', flush=True)
-    _reporoot = Path('/net/dali/home/mscbio/icd3/music-rnn/')
+    _reporoot = Path('/home/ian/projects/music-rnn')
     _datadir = _reporoot / 'data' / 'classical'
     _metadata_file = _datadir / 'metadata.csv'
     output_dir = Path('./')
@@ -108,6 +108,7 @@ if __name__ == "__main__":
         output_dir.mkdir()
     metrics_file = output_dir / 'metrics.csv'
 
+    # fix filepaths in metadata according to given filepaths
     df_meta = pd.read_csv(_metadata_file)
     def process_path(row, _datadir=_datadir):
         fp = Path(row['file'])
@@ -138,7 +139,7 @@ if __name__ == "__main__":
 
     dset_test = PianoRoll(df_meta=df_test, 
                         batch_size=batch_size, 
-                        batch_per_file=batch_per_file,
+                        batch_per_file=20,
                         seq_length=seq_length)
 
 
@@ -181,7 +182,7 @@ if __name__ == "__main__":
 
 
         # compute metrics every 10 iterations
-        if iter_idx % 50 == 0:
+        if iter_idx > 0 and iter_idx % 50 == 0:
 
             metrics['iter'].append(iter_idx)
 

@@ -1,16 +1,16 @@
 #!/bin/bash
 
-#SBATCH --job-name=cvae-jupyter
-
-#SBATCH -p dept_gpu
+#SBATCH --job-name=rnn-jupyter
 
 #SBATCH -t 8:00:00
 
-#SBATCH --gres=gpu:1
-
-#SBATCH --ntasks-per-node=1
-
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
+#SBATCH --partition=dept_gpu
+#SBATCH --gres=gpu:1
+#SBATCH -x g005
+#SBATCH --mem=64gb
 
 #SBATCH --output jupyter.stdout
 #SBATCH -e jupyter.stderr
@@ -47,7 +47,7 @@ http://localhost:$ipnport?token=$token
 "
 
 ## start an ipcluster instance and launch jupyter server
-
+source ~/.bashrc
 module load cuda/10.2
 module load anaconda
 conda activate mg

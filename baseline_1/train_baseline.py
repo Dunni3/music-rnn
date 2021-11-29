@@ -15,7 +15,7 @@ class PianoRoll(Dataset):
                  batch_size: int = 20, batch_per_file=None):
         self.df_meta = df_meta.copy()
 
-        self.df_meta['n_batches'] = self.df_meta['roll_length']*0.9 // batch_size
+        self.df_meta['n_batches'] = (self.df_meta['roll_length'] - seq_length )*0.95 // batch_size
         self.df_meta['n_batches'] = self.df_meta['n_batches'].astype(int)
         file_idx_ends = []
         n_batches = self.df_meta['n_batches'].values
@@ -260,4 +260,5 @@ if __name__ == "__main__":
                 print(f'iter_idx={iter_idx}, {key}={val[-1]}')
 
             # save model
-            torch.save(model.state_dict(), f'model_weights_iter{iter_idx}.pth')
+            state_file = output_dir / f'model_weights_iter{iter_idx}.pth'
+            torch.save(model.state_dict(), state_file)

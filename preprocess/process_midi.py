@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import os 
 import sys
 #GLOBALS
-TIME_STEP=.02
+TIME_STEP = .02
 """
 load raw midi file as pretty MIDI object
 """
@@ -21,16 +21,15 @@ def load_midi(path=None):
         path='../raw/chopin/chp_op18.mid'
     raw= pm.PrettyMIDI(path)
     return raw 
-def midi_to_formatted(raw):
-    #get smallest duration
-    smallest= get_smallest(raw)
-    #get piano roll split by this duration 
-    raw_piano_roll= raw.get_piano_roll(fs=1/smallest)
-    return raw_piano_roll
-    #annotate piano roll by listing ties and chords 
-    #relabel notes as chord positions with octaves 
-    #output labeled 
-    pass
+def midi_to_formatted(raw,timestep=TIME_STEP,chord_set=None):
+    pr = raw.get_piano_roll(fs=1/timestep)
+    pr = pd.DataFrame(pr.T)
+    chrom = raw.get_chroma(fs=1/timestep)
+    chrom = pd.DataFrame(chrom.T)
+    chords = chrom.apply(lambda r: encode_chord(r),axis=1)
+    chords_onehot= pd.get_dummies(chords)
+    if chord_set is None:
+        return pd.concat((chords,chords_onehot))
 """
 function to build dictionary of chords where chords
 are a sorted (low to high) set of chromatic note positions (0 to 11)
@@ -226,7 +225,7 @@ def transpose_all_pianoRolls(path,timestep):
 def preprocess(rawDataPath):
     
     #for each file in rawDataPath:
-    folder_name= rawDataPath.split('/')[-1]+'_processed'
+    folder_name= rawDataPath.split('/')[-1]+'_processed_bin'
     abspath= os.path.abspath(rawDataPath+'/../')
     output_folder=os.path.join(abspath,folder_name)
     
@@ -256,8 +255,8 @@ def preprocess(rawDataPath):
         
         for raw,tag in zip([raw_lh,raw_rh],['left','right']):
             #transpose
-            
-            trans_pr,trans_ch= sample_and_transpose_to_C(raw,TIME_STEP)
+            time_step=get16th_time(raw)
+            trans_pr,trans_ch= sample_and_transpose_to_C(raw,time_step)
             trans_pr=pd.DataFrame(trans_pr.T); trans_ch=pd.DataFrame(trans_ch.T)
             
             pr_file= file.split('.')[-2]+f'_{tag}_C_pianoRoll.csv'
@@ -285,38 +284,55 @@ def preprocess(rawDataPath):
                 pitch_chord_set_right, pitch_chord_onehot= build_chord_set_and_1h(trans_ch,pitch_chord_set_right)
                 onehot_right[file_folder]= {'full':full_chord_onehot,'pitch':pitch_chord_onehot}
         
-   # leftfull=[]
-    #leftpitch=[]
-   # rightfull=[]
-   # rightpitch=[]
-    for f in onehot_left.keys():
+    #save column headers for each type
+    left_full_header=''
+    right_full_header=''
+    left_pitch_header=''
+    left_full_header=''
+    for f, i in zip(onehot_left.keys(),range(len(onehot_left.keys()))):
             for chord_type in onehot_left[f].keys():
                 lef= onehot_left[f][chord_type]
                 rig= onehot_right[f][chord_type]
                 name= f
                 if chord_type=='full':
+                   
                     print(f'inserting missing in full chords {f}')
                     l= insert_missing_columns(full_chord_set_left,lef)
                     r = insert_missing_columns(full_chord_set_right,rig)
-                    #write to files
+                    if i==0:
+                        left_full_header=np.array(l.columns)
+                        right_full_header=np.array(r.columns)
+                        np.save(f'{output_folder}/header_left_full.npy',left_full_header)
+                        np.save(f'{output_folder}/header_right_full.npy',right_full_header)
+                        
                     
-                    l.to_csv(f'{output_folder}/{name}/{name}_left_C_full.csv')
-                    r.to_csv(f'{output_folder}/{name}/{name}_right_C_full.csv')
+                    #write to files
+                    l=l.values.astype(bool)
+                    r=r.values.astype(bool)
+                    np.save(f'{output_folder}/{name}/{name}_left_C_full.npy',l)
+                    np.save(f'{output_folder}/{name}/{name}_right_C_full.npy',r)
                    # leftfull.append(list(l.columns))
                    # rightfull.append(list(r.columns))
                 elif chord_type=='pitch':
                     print(f'inserting missing in pitch chords {f}')
                     l = insert_missing_columns(pitch_chord_set_left,lef)
                     r = insert_missing_columns(pitch_chord_set_right,rig)
-                    l.to_csv(f'{output_folder}/{name}/{name}_left_C_pitch.csv')
-                    r.to_csv(f'{output_folder}/{name}/{name}_right_C_pitch.csv')
-                   # leftpitch.append(list(l.columns))
-                   # rightpitch.append(list(r.columns))
+                   
+                    if i==0:
+                        left_pitch_header=np.array(l.columns)
+                        right_pitch_header=np.array(r.columns)
+                        np.save(f'{output_folder}/header_left_pitch.npy',left_pitch_header)
+                        np.save(f'{output_folder}/header_right_pitch.npy',right_pitch_header)
+                    l=l.values.astype(bool)
+                    r=r.values.astype(bool)
+                    np.save(f'{output_folder}/{name}/{name}_left_C_pitch.npy',l)
+                    np.save(f'{output_folder}/{name}/{name}_right_C_pitch.npy',r)
                 else:
                     print('error')
                     print(chord_type)
                     sys.exit()
-        
+     
+   
 def preprocess_handless(rawDataPath):
     folder_name= rawDataPath.split('/')[-1]+'_processed_handless'
     abspath= os.path.abspath(rawDataPath+'/../')
@@ -376,14 +392,53 @@ def preprocess_handless(rawDataPath):
                         print('error')
                         print(chord_type)
                         sys.exit()
+def transpose_to_C(raw_midi,timestep):
+    #timestep=np.infty
+    changes=raw_midi.key_signature_changes
+    for ks,i in zip(changes,range(len(changes))):
+        #if key is C, continue
+        if ks.key_number==0:
+            continue
+        else:
+            diff_from_C= min(0-ks.key_number%12,12-ks.key_number%12)
+            assert(ks.key_number+diff_from_C==0)
+            for instrument in raw_midi.instruments:
+                if not instrument.is_drum:
+                    for note in instrument.notes:
+                        if note.end < ks.time:
+                            continue
+                        elif (i<len(changes)-1 and note.end >= changes[i+1].time):
+                            break
+                        else:
+                            note.pitch+=diff_from_C
+                           # length=note.get_duration()
+                            #if 0<length<timestep:
+                            #    timestep=length
+                            
+        
     
+        ks.key_number+=diff_from_C
     
-# =============================================================================
-#     pass
-#     print('checking files...')
-#     for col_list in [leftfull, leftpitch, rightfull, rightpitch]:
-#         check2(col_list)
-# =============================================================================
+    return raw_midi
+"""
+transpose all the midi files in a folder to C major 
+"""
+def transpose_all_to_C(rawDataPath):
+    folder_name = rawDataPath.split('/')[-1]+'_C'
+    abspath= os.path.abspath(rawDataPath+'/../')
+    output_folder=os.path.join(abspath,folder_name)
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    for file in os.listdir(datapath):
+        if file.split('.')[-1]!='mid':
+            continue
+        else:
+            raw = load_midi(f'{rawDataPath}/{file}')
+            transposed=transpose_to_C(raw, TIME_STEP)
+            transposed.write(f'{output_folder}/{file.split(".")[-2]}_C_.mid')
+            print(f'transposed {file}')
+
+
     
 def insert_missing_columns(chordset, data):
     
@@ -460,13 +515,20 @@ def add_tie_feature(path):
                 filename= file.split('pianoRoll')[-2]+'ties.csv' 
                 tie_feature.to_csv(f'{path}/{file_folder}/{filename}')
                 print(f'{path}/{file_folder}/{filename}')
-        
-        
+def get16th_time(midi):
+    tempos, probabilities = midi.estimate_tempi()
+    assert np.isclose(sum(probabilities), 1)
+    tempo_bpm = np.dot(tempos, probabilities) # expected tempo in beats/min
+    seconds_per_beat = (1/tempo_bpm)*60
+    time_sig_denom = midi.time_signature_changes[0].denominator
+    note_dist = seconds_per_beat / (16 / time_sig_denom)
+    return note_dist
 if __name__=='__main__':
    #TIME_STEP=0.0226#estimate_timestep()
-   datapath= '../raw/mozart'
+   datapath= '../../raw/mozart'
+   preprocess(datapath)
    #datapath= '../raw/test'
-   preprocess_handless(datapath)
+   #transpose_all_to_C(datapath)
    #add_tie_feature(datapath)
 # =============================================================================
 #    ins=['left','right']

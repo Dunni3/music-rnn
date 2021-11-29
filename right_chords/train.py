@@ -68,7 +68,7 @@ class FullChord(Dataset):
         if self.batch_per_file is None:
             file_idx_ends = self.df_meta['file_idx_ends'].values
             for i in range(len(file_idx_ends)):
-                if idx < file_idx_ends[i]:
+                if idx <= file_idx_ends[i]:
                     file_idx = i
                     break
             if file_idx == 0:

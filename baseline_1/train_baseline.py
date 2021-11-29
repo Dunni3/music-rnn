@@ -47,7 +47,7 @@ class PianoRoll(Dataset):
         if self.batch_per_file is None:
             file_idx_ends = self.df_meta['file_idx_ends'].values
             for i in range(len(file_idx_ends)):
-                if idx < file_idx_ends[i]:
+                if idx <= file_idx_ends[i]:
                     file_idx = i
                     break
             if file_idx == 0:
@@ -58,9 +58,6 @@ class PianoRoll(Dataset):
         else:
             file_idx = idx // self.idx_per_file
             window_idx = idx % self.idx_per_file
-
-        if idx == 17280:
-            print(f'idx_start = {idx_start}')
         
         
         seq, label = self.get_rolls(file_idx, window_idx)
@@ -89,9 +86,6 @@ class PianoRoll(Dataset):
         roll[roll != 0] = 1
         roll = roll.T
         roll_window = roll[window_idx:window_idx+self.seq_length+1, :]
-
-        if roll_window.shape[0] != self.seq_length:
-            print(file_idx, window_idx)
         
         seq = roll_window[:-1]
         label = roll_window[-1]
@@ -195,9 +189,9 @@ if __name__ == "__main__":
 
     train_losses = []
 
-    while iter_idx < 1000:
+    while iter_idx < 5000:
         iter_idx += 1
-        print(f'iter_idx = {iter_idx}', flush=True)
+        # print(f'iter_idx = {iter_idx}', flush=True)
         
         try:
             features, labels = next(train_iterator)
@@ -219,7 +213,7 @@ if __name__ == "__main__":
 
 
         # compute metrics every 10 iterations
-        if iter_idx > 0 and iter_idx % 50 == 0:
+        if iter_idx > 0 and iter_idx % 100 == 0:
 
             metrics['iter'].append(iter_idx)
 

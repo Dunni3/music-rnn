@@ -133,8 +133,8 @@ if __name__ == "__main__":
     learning_rate = 1e-3
     batch_size = 8
     num_workers = 0
-    n_iters = 2
-    output_interval = 10
+    n_iters = 1000
+    output_interval = 20
 
     df_preprocess = get_preprocessed_files(processed_data_dir)
 
@@ -174,7 +174,7 @@ if __name__ == "__main__":
 
     while iter_idx < n_iters:
         iter_idx += 1
-        print(f'{iter_idx=}', flush=True)
+        # print(f'{iter_idx=}', flush=True)
 
         try:
             features, labels = next(train_iterator)

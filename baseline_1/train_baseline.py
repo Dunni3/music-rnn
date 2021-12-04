@@ -92,40 +92,27 @@ class PianoRoll(Dataset):
         return seq, label
 
 class PianoRollLSTM(nn.Module):
-    def __init__(self, separate=True):
+    def __init__(self, hidden_size=64):
         super(PianoRollLSTM, self).__init__()
         
-        self.separate = separate
-        
-        if separate:
-            input_size = 256
-        else:
-            input_size = 128
-            
-        hidden_size = input_size // 2
+        input_size=128
+        self.hidden_size = hidden_size
             
         self.lstm = nn.LSTM(input_size=input_size, batch_first=True, num_layers=1, hidden_size=hidden_size)
         
-        self.left_pitch_layer = nn.Sequential(
+        self.norm = nn.BatchNorm1d(num_features=hidden_size)
+        
+        self.pitch_layer = nn.Sequential(
             nn.Linear(hidden_size, input_size),
             nn.Sigmoid()
         )
         
-        if self.separate:
-            self.right_pitch_layer = nn.Sequential(
-                nn.Linear(hidden_size, input_size),
-                nn.Sigmoid()
-            )
     def forward(self, x):
         output, (h_n, c_n) = self.lstm(x)
-         
-        left_output = self.left_pitch_layer(h_n)
-        
-        if not self.separate:
-            return left_output
-        else:
-            right_output = self.right_pitch_layer(h_n)
-            return left_output, right_output
+        linear_input = output[:, -1, :]
+        normed_linear_input = self.norm(linear_input)
+        left_output = self.pitch_layer(normed_linear_input)
+        return left_output
 
 if __name__ == "__main__":
     torch.manual_seed(0)
@@ -148,10 +135,13 @@ if __name__ == "__main__":
         return str(new_fp)
     df_meta['file'] = df_meta.apply(process_path, axis=1)
 
-    seq_length = 100
-    learning_rate = 1e-3
+    seq_length = 30
+    learning_rate = 3e-4
     batch_size = 8
     num_workers = 0
+    n_iters = 10000
+    out_interval = 100
+    hidden_size = 60
 
     df_chpn = df_meta[df_meta['composer'] == 'chpn']
     rng = np.random.default_rng(12345)
@@ -177,7 +167,9 @@ if __name__ == "__main__":
     train_dataloader = DataLoader(dset_train, batch_size=batch_size, shuffle=True, num_workers=0)
     test_dataloader = DataLoader(dset_test, batch_size=batch_size, shuffle=False, num_workers=0)
 
-    model = PianoRollLSTM(separate=False)
+    model = PianoRollLSTM(hidden_size=hidden_size)
+    # set model bias so it initially predicts all notes as 0
+    model.pitch_layer[0].bias = nn.Parameter(model.pitch_layer[0].bias - 0.24)
     loss_fn = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -201,7 +193,7 @@ if __name__ == "__main__":
         
 
         # compute prediction and loss
-        pred = model(features)[0, :, :]
+        pred = model(features)
         loss = loss_fn(pred, labels)
 
         # backprop
@@ -229,14 +221,15 @@ if __name__ == "__main__":
             frac_notes_correct = 0
             frac_frames_correct = 0
             num_batches = len(test_dataloader)
-            for features, labels in test_dataloader:
-                pred = model(features)[0, :, :]
-                test_loss += test_loss_fn(pred, labels).item()
+            with torch.no_grad():
+                for features, labels in test_dataloader:
+                    pred = model(features)
+                    test_loss += test_loss_fn(pred, labels).item()
 
-                notes = (pred > 0.5).type(torch.float)
-                equal = torch.eq(notes, labels)
-                frac_notes_correct += torch.mean(torch.sum(equal, axis=1) / 128)
-                frac_frames_correct += torch.sum(torch.all(equal, axis=1)) / batch_size
+                    notes = (pred > 0.5).type(torch.float)
+                    equal = torch.eq(notes, labels)
+                    frac_notes_correct += torch.mean(torch.sum(equal, axis=1) / 128)
+                    frac_frames_correct += torch.sum(torch.all(equal, axis=1)) / batch_size
 
             frac_notes_correct /= num_batches
             frac_frames_correct = frac_frames_correct / num_batches

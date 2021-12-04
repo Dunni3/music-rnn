@@ -1,7 +1,2 @@
-it looks like the previous baseline might be overfitting at the beginning, since i have it doing 650 batches per file,
-training loss goes to 0 immediately and test loss increases rapidly.
-
-i'm going to try setting shuffle=true for the training dataloader for this iteration
-
-found bug: returning entire file for each slice..
+it works baby!!!!
 

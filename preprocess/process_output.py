@@ -23,8 +23,10 @@ piano roll specs:
     Nx128 np array 
 
 """
-def pianoRoll_to_midi(pianoRoll,timestep=TIME_STEP,midi=pm.PrettyMIDI(), ins_name="Piano"):
+def pianoRoll_to_midi(pianoRoll,timestep=TIME_STEP, ins_name="Piano"):
     
+    
+    midi=pm.PrettyMIDI()
     #confirm specs
     try:
         assert(pianoRoll.shape[1]==128)
@@ -127,8 +129,24 @@ def test():
     print('all tests passed')
     
 if __name__=='__main__':
-    test()
-    
+    #test()
+    #pianoRoll_to_midi(pd.read_csv('big_chord.csv')).write('big_chord.mid')
+    path='../../raw/chopin_processed_bin/header_right_full.csv'
+    head= pd.read_csv(path)
+    print(head)
+# =============================================================================
+#     file='../../raw/mozart_processed/mz_311_1/mz_311_1_right_C_full.csv'
+#     chords=pd.read_csv(file,index_col=0)
+#     chords['ints']=chords.idxmax(axis=1).apply(lambda r: int(r,2))
+#     counts=chords['ints'].value_counts()
+#     plt.plot(counts.values)
+#     chp_looped='/Users/trachman/Documents/ML/final_project/raw/classical_C/chp_op18_C_.mid'
+#     pr=pm.PrettyMIDI(chp_looped).get_piano_roll(fs=1/.02)
+#     #get first 15s
+#     pr_loop=pd.DataFrame(pr[:,:int(16/.02)].T)
+#     pr_loop= pd.concat([pr_loop]*10,ignore_index=True)
+#     pianoRoll_to_midi(pr_loop).write('chopin_loop.mid')
+# =============================================================================
 # =============================================================================
 #     piano_test=pm.PrettyMIDI()
 #     pno_program=pm.instrument_name_to_program('Acoustic Grand Piano')

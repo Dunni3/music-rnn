@@ -203,7 +203,7 @@ if __name__ == "__main__":
 
 
     train_dataloader = DataLoader(dset_train, batch_size=batch_size, shuffle=True, num_workers=0, drop_last=True)
-    test_dataloader = DataLoader(dset_test, batch_size=batch_size, shuffle=False, num_workers=0)
+    test_dataloader = DataLoader(dset_test, batch_size=batch_size, shuffle=False, num_workers=0, drop_last=True)
 
     model = PianoRollLSTM(hidden_size=hidden_size)
     model.pitch_layer[0].bias = nn.Parameter(model.pitch_layer[0].bias - 0.24)

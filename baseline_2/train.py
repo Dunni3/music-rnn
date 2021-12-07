@@ -197,7 +197,7 @@ if __name__ == "__main__":
     
     try:
         tmp=config['N_ITERS']
-        if tmp is not None:
+        if tmp != "":
             n_iters=tmp
         else:
             n_iters = len(dset_train)*num_epochs

@@ -1,0 +1,12 @@
+{
+	"PREPROCESSED_PATH":"path",
+	"SEQUENCE_LENGTH":"length",
+	"LEARN_RATE":"learnrate",
+	"NUM_ITER":"niter",
+	"OUT_INTERVAL":"out",
+	"HIDDEN_SIZE": "hidden",
+	"RAW_MIDI_PATH": "raw",
+	"NUM_EPOCHS":"nepoch",
+	"BATCH_SIZE":"bs",
+	"OUTPUT_DIR":"od"	
+}

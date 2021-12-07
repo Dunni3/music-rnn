@@ -302,15 +302,15 @@ def preprocess(rawDataPath):
                     if i==0:
                         left_full_header=np.array(l.columns)
                         right_full_header=np.array(r.columns)
-                        np.save(f'{output_folder}/header_left_full.npy',left_full_header)
-                        np.save(f'{output_folder}/header_right_full.npy',right_full_header)
+                        np.save(f'{output_folder}/header_left_{chord_type}.npy',left_full_header)
+                        np.save(f'{output_folder}/header_right_{chord_type}.npy',right_full_header)
                         
                     
                     #write to files
                     l=l.values.astype(bool)
                     r=r.values.astype(bool)
-                    np.save(f'{output_folder}/{name}/{name}_left_C_full.npy',l)
-                    np.save(f'{output_folder}/{name}/{name}_right_C_full.npy',r)
+                    np.save(f'{output_folder}/{name}/{name}_left_C_{chord_type}.npy',l)
+                    np.save(f'{output_folder}/{name}/{name}_right_C_{chord_type}.npy',r)
                    # leftfull.append(list(l.columns))
                    # rightfull.append(list(r.columns))
                 elif chord_type=='pitch':
@@ -321,12 +321,12 @@ def preprocess(rawDataPath):
                     if i==0:
                         left_pitch_header=np.array(l.columns)
                         right_pitch_header=np.array(r.columns)
-                        np.save(f'{output_folder}/header_left_pitch.npy',left_pitch_header)
-                        np.save(f'{output_folder}/header_right_pitch.npy',right_pitch_header)
+                        np.save(f'{output_folder}/header_left_{chord_type}.npy',left_pitch_header)
+                        np.save(f'{output_folder}/header_right_{chord_type}.npy',right_pitch_header)
                     l=l.values.astype(bool)
                     r=r.values.astype(bool)
-                    np.save(f'{output_folder}/{name}/{name}_left_C_pitch.npy',l)
-                    np.save(f'{output_folder}/{name}/{name}_right_C_pitch.npy',r)
+                    np.save(f'{output_folder}/{name}/{name}_left_C_{chord_type}.npy',l)
+                    np.save(f'{output_folder}/{name}/{name}_right_C_{chord_type}.npy',r)
                 else:
                     print('error')
                     print(chord_type)
@@ -348,12 +348,14 @@ def preprocess_handless(rawDataPath):
         file_folder= file.split('.')[0]
         
       
-        
-        trans_pr,trans_ch= sample_and_transpose_to_C(raw,TIME_STEP)
+        timestep=.1
+        #trans_pr,trans_ch= sample_and_transpose_to_C(raw,TIME_STEP)
+        trans_pr = raw.get_piano_roll(fs=1/timestep)
+        trans_ch = raw.get_piano_roll(fs=1/timestep)
         trans_pr=pd.DataFrame(trans_pr.T); trans_ch=pd.DataFrame(trans_ch.T)
             
-        pr_file= file.split('.')[-2]+f'_C_pianoRoll.csv'
-        ch_file= file.split('.')[-2]+f'_C_chroma.csv'
+        pr_file= file.split('.')[-2]+f'{file_folder}_pianoRoll.csv'
+        ch_file= file.split('.')[-2]+f'{file_folder}_chroma.csv'
             
             
             #checkpoint
@@ -372,26 +374,37 @@ def preprocess_handless(rawDataPath):
         pitch_chord_set, pitch_chord_onehot = build_chord_set_and_1h(trans_ch,pitch_chord_set)
         onehot[file_folder]= {'full':full_chord_onehot,'pitch':pitch_chord_onehot}
                     
-    for f in onehot.keys():
+    for f, i in zip(onehot.keys(),range(len(onehot.keys()))):
         for chord_type in onehot[f].keys():
                     incomplete= onehot[f][chord_type]
 
                     name= f
                     if chord_type=='full':
-                        continue
-# =============================================================================
-#                         print(f'inserting missing in full chords {f}')
-#                         complete= insert_missing_columns(full_chord_set,incomplete)                        
-#                         complete.to_csv(f'{output_folder}/{name}/{name}_C_full.csv')
-# =============================================================================
+                        print(f'inserting missing in full chords {f}')
+                        complete= insert_missing_columns(full_chord_set,incomplete)
+                        if i==0:
+                             print(f'WRITING HEADER IN {output_folder}')
+                             header=pd.Series(complete.columns)
+                             header.to_csv(f'{output_folder}/header_{chord_type}.csv')
+                            
                     elif chord_type=='pitch':
                         print(f'inserting missing in pitch chords {f}')
-                        complete = insert_missing_columns(pitch_chord_set,incomplete)                       
-                        complete.to_csv(f'{output_folder}/{name}/{name}_C_pitch.csv')                                           
+                        complete = insert_missing_columns(pitch_chord_set,incomplete)  
+                        if i==0:
+                             print(f'WRITING HEADER IN {output_folder}')
+                             header=pd.Series(complete.columns)
+                             header.to_csv(f'{output_folder}/header_{chord_type}.csv')
+                   
+                    
                     else:
-                        print('error')
-                        print(chord_type)
-                        sys.exit()
+                         print('error')
+                         print(chord_type)
+                         sys.exit()
+                         
+                    complete=complete.values.astype(bool)                        
+                    np.save(f'{output_folder}/{name}/{name}_{chord_type}.npy',complete)
+                     
+                   
 def transpose_to_C(raw_midi,timestep):
     #timestep=np.infty
     changes=raw_midi.key_signature_changes
@@ -525,8 +538,8 @@ def get16th_time(midi):
     return note_dist
 if __name__=='__main__':
    #TIME_STEP=0.0226#estimate_timestep()
-   datapath= '../../raw/mozart'
-   preprocess(datapath)
+   datapath= '../../raw/benchmark'
+   preprocess_handless(datapath)
    #datapath= '../raw/test'
    #transpose_all_to_C(datapath)
    #add_tie_feature(datapath)

@@ -196,7 +196,11 @@ if __name__ == "__main__":
                         seq_length=seq_length)
     
     try:
-        n_iters=config['N_ITERS']
+        tmp=config['N_ITERS']
+        if tmp is not None:
+            n_iters=tmp
+        else:
+            n_iters = len(dset_train)*num_epochs
     except KeyError:
         n_iters = len(dset_train)*num_epochs
     

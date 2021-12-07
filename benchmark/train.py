@@ -188,7 +188,11 @@ if __name__ == "__main__":
     print(f'training dataset size = {len(dset_train)}')
 
     try:
-        n_iters=config['N_ITERS']
+        tmp=config['N_ITERS']
+        if tmp is not None:
+            n_iters=tmp
+        else:
+            n_iters = len(dset_train)*num_epochs
     except KeyError:
         n_iters = len(dset_train)*num_epochs
 
@@ -278,7 +282,7 @@ if __name__ == "__main__":
             # save metrics
             df_metrics = pd.DataFrame({ key: np.asarray(val) for key, val in metrics.items() })
             df_metrics.to_csv(metrics_file)
-            
+
             for key, val in metrics.items():
                 print(f'iter_idx={iter_idx}, {key}={val[-1]}', flush=True)
 

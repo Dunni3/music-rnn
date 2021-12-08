@@ -29,7 +29,7 @@ def pianoRoll_to_midi(pianoRoll,timestep=TIME_STEP, ins_name="Piano"):
     midi=pm.PrettyMIDI()
     #confirm specs
     try:
-        assert(pianoRoll.shape[1]==128)
+        assert(pianoRoll.shape[1]==128 or pianoRoll.shape[1]==12)
     except:
         print(f'column shape {pianoRoll.shape[1]} should be 128')
         print('exiting...')
@@ -63,14 +63,22 @@ def pianoRoll_to_midi(pianoRoll,timestep=TIME_STEP, ins_name="Piano"):
 helper function that converts binary string to vector 
 """
 def chordstring_to_timestep(s):
-    length=len(s)
+    
+    
     try:
         #assert length==128
         assert type(s)==str
     except:
-        print('check input')
-        print('exiting...')
-        sys.exit()
+        s=str(s)
+        assert(len(s))<13
+        s='0'*(12-len(s))+s
+# =============================================================================
+#         print('check input')
+#         print('exiting...')
+#         sys.exit()
+# =============================================================================
+    if len(s)==12:
+        s='0'*59+s+'0'*57
     out=np.array(s.replace('','.').split('.')[1:-1],dtype=int)
     
     return out
@@ -82,6 +90,7 @@ def full_chord_to_pianoRoll(full):
     roll=full.apply(func=chordstring_to_timestep)
     roll=roll.explode().to_numpy().reshape(len(full),128)
     return pd.DataFrame(roll)
+
 def test():
     s1='101'
     s2='000000000'
@@ -132,15 +141,13 @@ if __name__=='__main__':
     #test()
     #pianoRoll_to_midi(pd.read_csv('big_chord.csv')).write('big_chord.mid')
     
-    file_path = '/Users/trachman/Documents/ML/final_project/raw/chopin_processed_bin/chpn_op25_e11/chpn_op25_e11_right_C_full.npy'
-    header_path = '/Users/trachman/Documents/ML/final_project/raw/chp_headers/header_right_full.csv'
-    header = pd.read_csv(header_path,index_col=0).values.flatten().tolist()
-    full = pd.DataFrame(np.load(file_path),columns=header)
-    print(full.shape)
-    #print(full.shape)
-    pr = full_chord_to_pianoRoll(full)
-    print(pr.shape)
-    pianoRoll_to_midi(pr,timestep=.02).write('full_test.mid')
+    file_path = '/Users/trachman/Documents/ML/final_project/raw/mozart_processed_handless/mz_311_1/mz_311_1_C_pianoRoll.csv'
+    #header_path = '/Users/trachman/Documents/ML/final_project/raw/mozart_processed_handless_8th/header_pitch.csv'
+    #header = pd.read_csv(header_path,index_col=0).values.flatten().tolist()
+    #full = pd.DataFrame(np.load(file_path),columns=header)
+    pr = pd.read_csv(file_path,index_col=0)
+    pr = pr.iloc[list(range(0,pr.shape[0],7))]
+    pianoRoll_to_midi(pr,timestep=.1).write('slice_test.mid')
   
 
 

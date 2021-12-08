@@ -1,0 +1,11 @@
+{
+	"DATA_DIR": "../data/mozart_processed_handless_8th",
+	"SEQUENCE_LENGTH": 30,
+	"LEARN_RATE": 0.0003,
+	"OUT_INTERVAL": 1,
+	"HIDDEN_SIZE": 60,
+	"NUM_EPOCHS": 50,
+	"N_ITERS": 3,
+	"BATCH_SIZE": 8,
+	"OUTPUT_DIR": "./"	
+}

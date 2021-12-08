@@ -220,6 +220,8 @@ if __name__ == "__main__":
         # compute prediction and loss
         # pred = model(features)[0, :, :]
         pred = model(features)
+        print(f'{pred.shape=}')
+        print(f'{labels.shape=}')
         loss = loss_fn(pred, labels)
 
         # backprop

@@ -1,0 +1,13 @@
+model training info:
+- epochs = 30
+- testing set was everything in G4, training set was everything not in G4
+- seq_length = 6
+- hidden_size = 50
+
+training set example:
+- file = data/prog_benchmark_processed_handless/prog_1-6-5-4-1_E4_sev/prog_1-6-5-4-1_E4_sev_full.npy
+- start_idx = 12
+
+test set example:
+
+

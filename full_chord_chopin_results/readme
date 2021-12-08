@@ -1,0 +1,15 @@
+training info:
+	- chopin dataset
+	- 5 epochs
+	- downsampled chord rolls until equal to sampling frequency of pianoroll model
+	- sequence length = 30
+
+seq_length = 30
+learning_rate = 3e-4
+batch_size = 8
+num_workers = 0
+n_iters = 19348*5
+output_interval = 19348 // 2
+hidden_size = 80
+
+training example start_idx=0

@@ -1,3 +1,5 @@
+chordrolllstm trained on simple chord data
+
 file for generating primers: data/prog_benchmark_processed_handless/prog_1-4-5-4-1_F4_triad/prog_1-4-5-4-1_F4_triad_full.npy
 start_idx = 76
 

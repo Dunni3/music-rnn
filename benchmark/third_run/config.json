@@ -1,0 +1,11 @@
+{
+	"PREPROCESSED_DATA_DIR":"../../data/benchmark_exp_2",
+	"SEQUENCE_LENGTH": 32,
+	"LEARN_RATE": 0.0003,
+	"OUT_INTERVAL": 10000,
+	"HIDDEN_SIZE": 60,
+	"NUM_EPOCHS": 100,
+	"N_ITERS": "",
+	"BATCH_SIZE": 8,
+	"OUTPUT_DIR": "./"	
+}

@@ -1,0 +1,12 @@
+{
+	"PREPROCESSED_PATH":"path",
+	"DATA_DIR": "../data/classical",
+	"SEQUENCE_LENGTH": 20,
+	"LEARN_RATE": 0.0003,
+	"OUT_INTERVAL": 1,
+	"HIDDEN_SIZE": 60,
+	"NUM_EPOCHS": 50,
+	"N_ITERS": 3,
+	"BATCH_SIZE": 8,
+	"OUTPUT_DIR": "./"	
+}

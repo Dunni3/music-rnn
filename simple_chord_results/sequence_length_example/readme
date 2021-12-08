@@ -1,0 +1,8 @@
+file for generating primers: data/prog_benchmark_processed_handless/prog_1-4-5-4-1_F4_triad/prog_1-4-5-4-1_F4_triad_full.npy
+start_idx = 76
+
+note that this file is from the training set!
+
+short_primer: primer is just 3 notes from the file
+
+long_primer: primer is 4 notes from the file

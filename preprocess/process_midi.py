@@ -225,7 +225,7 @@ def transpose_all_pianoRolls(path,timestep):
 def preprocess(rawDataPath):
     
     #for each file in rawDataPath:
-    folder_name= rawDataPath.split('/')[-1]+'_processed_bin'
+    folder_name= rawDataPath.split('/')[-1]+'_processed_qnote'
     abspath= os.path.abspath(rawDataPath+'/../')
     output_folder=os.path.join(abspath,folder_name)
     
@@ -255,7 +255,7 @@ def preprocess(rawDataPath):
         
         for raw,tag in zip([raw_lh,raw_rh],['left','right']):
             #transpose
-            time_step=get16th_time(raw)
+            time_step=4*get16th_time(raw) #quarter note sampling rate 
             trans_pr,trans_ch= sample_and_transpose_to_C(raw,time_step)
             trans_pr=pd.DataFrame(trans_pr.T); trans_ch=pd.DataFrame(trans_ch.T)
             
@@ -300,11 +300,10 @@ def preprocess(rawDataPath):
                     l= insert_missing_columns(full_chord_set_left,lef)
                     r = insert_missing_columns(full_chord_set_right,rig)
                     if i==0:
-                        left_full_header=np.array(l.columns)
-                        right_full_header=np.array(r.columns)
-                        np.save(f'{output_folder}/header_left_{chord_type}.npy',left_full_header)
-                        np.save(f'{output_folder}/header_right_{chord_type}.npy',right_full_header)
-                        
+                        left_full_header=pd.Series(l.columns)
+                        right_full_header=pd.Series(r.columns)
+                        left_full_header.to_csv(f'{output_folder}/header_left_{chord_type}.csv')
+                        right_full_header.to_csv(f'{output_folder}/header_right_{chord_type}.csv')
                     
                     #write to files
                     l=l.values.astype(bool)
@@ -319,10 +318,10 @@ def preprocess(rawDataPath):
                     r = insert_missing_columns(pitch_chord_set_right,rig)
                    
                     if i==0:
-                        left_pitch_header=np.array(l.columns)
-                        right_pitch_header=np.array(r.columns)
-                        np.save(f'{output_folder}/header_left_{chord_type}.npy',left_pitch_header)
-                        np.save(f'{output_folder}/header_right_{chord_type}.npy',right_pitch_header)
+                        left_pitch_header=pd.Series(l.columns)
+                        right_pitch_header=pd.Series(r.columns)
+                        left_pitch_header.to_csv(f'{output_folder}/header_left_{chord_type}.csv')
+                        right_pitch_header.to_csv(f'{output_folder}/header_right_{chord_type}.csv')
                     l=l.values.astype(bool)
                     r=r.values.astype(bool)
                     np.save(f'{output_folder}/{name}/{name}_left_C_{chord_type}.npy',l)
@@ -348,14 +347,14 @@ def preprocess_handless(rawDataPath):
         file_folder= file.split('.')[0]
         
       
-        timestep=.1
-        #trans_pr,trans_ch= sample_and_transpose_to_C(raw,TIME_STEP)
-        trans_pr = raw.get_piano_roll(fs=1/timestep)
-        trans_ch = raw.get_piano_roll(fs=1/timestep)
+        timestep=get16th_time(raw)
+        trans_pr,trans_ch= sample_and_transpose_to_C(raw,timestep)
+        #trans_pr = raw.get_piano_roll(fs=1/timestep)
+       # trans_ch = raw.get_piano_roll(fs=1/timestep)
         trans_pr=pd.DataFrame(trans_pr.T); trans_ch=pd.DataFrame(trans_ch.T)
             
-        pr_file= file.split('.')[-2]+f'{file_folder}_pianoRoll.csv'
-        ch_file= file.split('.')[-2]+f'{file_folder}_chroma.csv'
+        pr_file= file.split('.')[-2]+'_pianoRoll.csv'
+        ch_file= file.split('.')[-2]+'_chroma.csv'
             
             
             #checkpoint
@@ -377,7 +376,6 @@ def preprocess_handless(rawDataPath):
     for f, i in zip(onehot.keys(),range(len(onehot.keys()))):
         for chord_type in onehot[f].keys():
                     incomplete= onehot[f][chord_type]
-
                     name= f
                     if chord_type=='full':
                         print(f'inserting missing in full chords {f}')
@@ -538,7 +536,7 @@ def get16th_time(midi):
     return note_dist
 if __name__=='__main__':
    #TIME_STEP=0.0226#estimate_timestep()
-   datapath= '../../raw/benchmark'
+   datapath= '../../raw/mozart'
    preprocess_handless(datapath)
    #datapath= '../raw/test'
    #transpose_all_to_C(datapath)

@@ -131,9 +131,20 @@ def test():
 if __name__=='__main__':
     #test()
     #pianoRoll_to_midi(pd.read_csv('big_chord.csv')).write('big_chord.mid')
-    path='../../raw/chopin_processed_bin/header_right_full.csv'
-    head= pd.read_csv(path)
-    print(head)
+    
+    file_path = '/Users/trachman/Documents/ML/final_project/raw/chopin_processed_bin/chpn_op25_e11/chpn_op25_e11_right_C_full.npy'
+    header_path = '/Users/trachman/Documents/ML/final_project/raw/chp_headers/header_right_full.csv'
+    header = pd.read_csv(header_path,index_col=0).values.flatten().tolist()
+    full = pd.DataFrame(np.load(file_path),columns=header)
+    print(full.shape)
+    #print(full.shape)
+    pr = full_chord_to_pianoRoll(full)
+    print(pr.shape)
+    pianoRoll_to_midi(pr,timestep=.02).write('full_test.mid')
+  
+
+
+
 # =============================================================================
 #     file='../../raw/mozart_processed/mz_311_1/mz_311_1_right_C_full.csv'
 #     chords=pd.read_csv(file,index_col=0)
